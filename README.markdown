@@ -78,3 +78,32 @@ However, GitLab does not provide a way to automatically renew certificates, so t
 ## Automation
 
 Since 10.2, GitLab provides an API to configure HTTPS certificates on a GitLab page, which means `gitlab-le` can be configured to obtain new certificates when your existing ones are about to expire.
+
+Example CI File:
+```
+image: node:9-alpine
+
+LetsEncrypt:
+  image: alexives/gitlab-le
+  stage: Deploy
+  only:
+    - schedules
+    - master
+  script:
+    - apk add --no-cache git
+    - npm install -g gitlab-letsencrypt
+    # test without --production first, then add it.
+    - gitlab-le --email user@example.com --domains example.com www.example.com --repository https://gitlab.com/example/example.com --token $GITLAB_LETSENCRYPT_TOKEN --production
+
+pages:
+  <<: *defaults
+  stage: Deploy
+  script:
+    - yarn install
+    - yarn build
+  only:
+    - master
+  artifacts:
+    paths:
+    - public
+```
